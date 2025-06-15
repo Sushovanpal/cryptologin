@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoTrader 3D Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            overflow: hidden;
+            background: #0a0b1a;
+            color: white;
+        }
+
+        #canvas-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Auth Container Base Styles */
+        .auth-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 380px;
+            padding: 40px 30px;
+            background: rgba(20, 22, 46, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 10;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .auth-container.hidden {
+            opacity: 0;
+            visibility: hidden;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+
+        .auth-container:hover {
+            box-shadow: 0 25px 45px rgba(93, 23, 235, 0.2);
+            border: 1px solid rgba(93, 23, 235, 0.3);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #5d17eb, #3a8bff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 600;
+        }
+
+        .logo span {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #5d17eb;
+            background: rgba(93, 23, 235, 0.1);
+        }
+
+        .input-group label {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            font-size: 12px;
+            background: #0a0b1a;
+            padding: 0 5px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 13px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+        }
+
+        .remember-me input {
+            margin-right: 5px;
+            accent-color: #5d17eb;
+        }
+
+        .forgot-password a {
+            color: rgba(93, 23, 235, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: #5d17eb;
+            text-decoration: underline;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #5d17eb, #3a8bff);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(93, 23, 235, 0.3);
+            transform: translateZ(0);
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px) translateZ(0);
+            box-shadow: 0 6px 20px rgba(93, 23, 235, 0.4);
+        }
+
+        .auth-btn:active {
+            transform: translateY(0) translateZ(0);
+        }
+
+        .back-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 10px;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .divider span {
+            padding: 0 10px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 12px;
+        }
+
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .social-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .social-btn:hover {
+            background: rgba(93, 23, 235, 0.1);
+            border-color: rgba(93, 23, 235, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .social-btn img {
+            width: 20px;
+            height: 20px;
+        }
+
+        .auth-footer {
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .auth-footer a {
+            color: #5d17eb;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .market-ticker {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 26, 0.7);
+            padding: 10px 0;
+            backdrop-filter: blur(5px);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 10;
+        }
+
+        .ticker-content {
+            display: flex;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .ticker-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 30px;
+            font-size: 12px;
+        }
+
+        .ticker-item .coin {
+            color: #3a8bff;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .ticker-item .price {
+            color: white;
+            margin-right: 5px;
+        }
+
+        .ticker-item .change {
+            color: #4caf50;
+        }
+
+        .ticker-item .change.negative {
+            color: #f44336;
+        }
+
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Security badge */
+        .security-badge {
+            position: absolute;
+            bottom: -25px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .security-badge img {
+            width: 12px;
+            margin-right: 5px;
+        }
+
+        /* Success message */
+        .success-message {
+            text-align: center;
+            margin: 20px 0;
+            color: #4caf50;
+            font-size: 14px;
+            opacity: 0;
+            height: 0;
+            transition: all 0.3s ease;
+        }
+
+        .success-message.visible {
+            opacity: 1;
+            height: auto;
+            margin: 20px 0;
+        }
+
+        /* Password strength indicator */
+        .password-strength {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            background: #f44336;
+            transition: all 0.3s ease;
+        }
+
+        /* Error message */
+        .error-message {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Google Sign-In Button */
+        #google-signin-btn {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <!-- Login Container -->
+    <div class="auth-container" id="login-container">
+        <div class="logo">
+            <h1>DecScan Pro</h1>
+            <span>YOUR SMART CRYPTO DASHBOARD</span>
+        </div>
+        
+        <div class="input-group">
+            <label>Email or Username</label>
+            <input type="text" placeholder="Enter your email or username" id="login-email">
+        </div>
+        
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" placeholder="Enter your password" id="login-password">
+        </div>
+        
+        <div class="options">
+            <div class="remember-me">
+                <input type="checkbox" id="remember">
+                <label for="remember">Remember me</label>
+            </div>
+            <div class="forgot-password">
+                <a id="forgot-password-link">Forgot password?</a>
+            </div>
+        </div>
+        
+        <button class="auth-btn" id="login-btn">LOGIN</button>
+        
+        <div class="divider">
+            <span>OR CONTINUE WITH</span>
+        </div>
+        
+        <div class="social-login">
+            <div class="social-btn" id="google-signin-button">
+                <img src="https://img.icons8.com/color/512/google-logo.png" alt="Google">
+            </div>
+        </div>
+        
+        <div class="auth-footer">
+            New to DecScan? <a id="create-account-link">Create account</a>
+        </div>
+    </div>
+    
+    <!-- Forgot Password Container -->
+    <div class="auth-container hidden" id="forgot-container">
+        <div class="logo">
+            <h1>Reset Password</h1>
+            <span>WE'LL SEND YOU A RECOVERY LINK</span>
+        </div>
+        
+        <div class="success-message" id="forgot-success">
+            <i class="fas fa-check-circle"></i> Password reset link sent to your email!
+        </div>
+        
+        <div class="input-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="Enter your registered email" id="forgot-email">
+        </div>
+        
+        <button class="auth-btn" id="send-reset-btn">SEND RESET LINK</button>
+        <button class="auth-btn back-btn" id="back-to-login-from-forgot">BACK TO LOGIN</button>
+        
+        <div class="auth-footer">
+            Remember your password? <a id="login-from-forgot-link">Login here</a>
+        </div>
+    </div>
+    
+    <!-- Create Account Container -->
+    <div class="auth-container hidden" id="register-container">
+        <div class="logo">
+            <h1>Create Account</h1>
+            <span>JOIN OUR CRYPTO COMMUNITY</span>
+        </div>
+        
+        <div class="success-message" id="register-success">
+            <i class="fas fa-check-circle"></i> Account created successfully!
+        </div>
+        
+        <div class="input-group">
+            <label>Full Name</label>
+            <input type="text" placeholder="Enter your full name" id="register-name">
+        </div>
+        
+        <div class="input-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="Enter your email" id="register-email">
+        </div>
+        
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" placeholder="Create a password" id="register-password">
+            <div class="password-strength">
+                <div class="strength-bar" id="strength-bar"></div>
+            </div>
+            <div class="error-message" id="password-error"></div>
+        </div>
+        
+        <div class="input-group">
+            <label>Confirm Password</label>
+            <input type="password" placeholder="Confirm your password" id="register-confirm-password">
+            <div class="error-message" id="confirm-error"></div>
+        </div>
+        
+        <div class="options">
+            <div class="remember-me">
+                <input type="checkbox" id="terms">
+                <label for="terms">I agree to terms & conditions</label>
+            </div>
+        </div>
+        
+        <button class="auth-btn" id="register-btn">CREATE ACCOUNT</button>
+        <button class="auth-btn back-btn" id="back-to-login-from-register">BACK TO LOGIN</button>
+        
+        <div class="auth-footer">
+            Already have an account? <a id="login-from-register-link">Login here</a>
+        </div>
+    </div>
+    
+    <div class="market-ticker">
+        <div class="ticker-content">
+            <div class="ticker-item">
+                <span class="coin">BTC</span>
+                <span class="price">$67,284.15</span>
+                <span class="change">+1.24%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="coin">ETH</span>
+                <span class="price">$3,812.47</span>
+                <span class="change">+0.89%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="coin">Market Cap</span>
+                <span class="price">$2.41T</span>
+                <span class="change">+0.67%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="coin">24h Vol</span>
+                <span class="price">$112.4B</span>
+                <span class="change negative">-3.12%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="coin">BTC Dominance</span>
+                <span class="price">51.2%</span>
+                <span class="change">+0.4%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="coin">Fear & Greed</span>
+                <span class="price">56</span>
+                <span class="change">Neutral</span>
+            </div>
+            <!-- Repeat items to create continuous ticker effect -->
+            <div class="ticker-item">
+                <span class="coin">BTC</span>
+                <span class="price">$67,284.15</span>
+                <span class="change">+1.24%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="coin">ETH</span>
+                <span class="price">$3,812.47</span>
+                <span class="change">+0.89%</span>
+            </div>
+            <div class="ticker-item">
+                <span class="coin">Market Cap</span>
+                <span class="price">$2.41T</span>
+                <span class="change">+0.67%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Google Sign-In Button -->
+    <div id="google-signin-btn"></div>
+
+    <script>
+        // Three.js 3D Scene Setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        
+        // Position camera
+        camera.position.z = 30;
+        
+        // Add ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        
+        // Add directional light
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+        
+        // Create floating crypto coins
+        const coins = [];
+        const coinGeometry = new THREE.TorusGeometry(2, 0.5, 16, 100);
+        
+        // Bitcoin
+        const btcMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0xf7931a,
+            emissive: 0xf7931a,
+            emissiveIntensity: 0.2,
+            shininess: 100
+        });
+        const btcCoin = new THREE.Mesh(coinGeometry, btcMaterial);
+        btcCoin.position.set(-15, 5, -10);
+        btcCoin.rotation.x = Math.PI / 2;
+        scene.add(btcCoin);
+        coins.push(btcCoin);
+        
+        // Ethereum
+        const ethMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x627eea,
+            emissive: 0x627eea,
+            emissiveIntensity: 0.2,
+            shininess: 100
+        });
+        const ethCoin = new THREE.Mesh(coinGeometry, ethMaterial);
+        ethCoin.position.set(10, -5, -15);
+        ethCoin.rotation.x = Math.PI / 2;
+        scene.add(ethCoin);
+        coins.push(ethCoin);
+        
+        // Add floating blockchain nodes
+        const nodes = [];
+        const nodeGeometry = new THREE.SphereGeometry(0.8, 32, 32);
+        const nodeMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x5d17eb,
+            emissive: 0x5d17eb,
+            emissiveIntensity: 0.3,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        for (let i = 0; i < 20; i++) {
+            const node = new THREE.Mesh(nodeGeometry, nodeMaterial);
+            node.position.set(
+                Math.random() * 60 - 30,
+                Math.random() * 40 - 20,
+                Math.random() * -50
+            );
+            scene.add(node);
+            nodes.push(node);
+        }
+        
+        // Add connecting lines between nodes
+        const lineMaterial = new THREE.LineBasicMaterial({ 
+            color: 0x3a8bff,
+            transparent: true,
+            opacity: 0.3
+        });
+        
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                if (Math.random() > 0.7) {
+                    const points = [];
+                    points.push(nodes[i].position);
+                    points.push(nodes[j].position);
+                    
+                    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    scene.add(line);
+                }
+            }
+        }
+        
+        // Add floating particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 500;
+        const posArray = new Float32Array(particlesCount * 3);
+        
+        for (let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 100;
+        }
+        
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.1,
+            color: 0x5d17eb,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Rotate coins
+            coins.forEach(coin => {
+                coin.rotation.y += 0.01;
+            });
+            
+            // Float nodes up and down
+            nodes.forEach((node, i) => {
+                node.position.y += Math.sin(Date.now() * 0.001 + i) * 0.01;
+            });
+            
+            // Rotate particles
+            particlesMesh.rotation.y += 0.001;
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Ticker animation
+        const tickerContent = document.querySelector('.ticker-content');
+        const tickerWidth = tickerContent.scrollWidth / 2;
+        
+        function animateTicker() {
+            tickerContent.style.transform = `translateX(${-tickerWidth}px)`;
+            tickerContent.style.animation = `ticker ${tickerWidth / 50}s linear infinite`;
+        }
+        
+        // Start ticker animation after a short delay
+        setTimeout(animateTicker, 500);
+        
+        // Add hover effect to auth containers
+        const authContainers = document.querySelectorAll('.auth-container');
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth - 0.5;
+            const y = e.clientY / window.innerHeight - 0.5;
+            
+            authContainers.forEach(container => {
+                if (!container.classList.contains('hidden')) {
+                    container.style.transform = `translate(-50%, -50%) rotateY(${x * 5}deg) rotateX(${-y * 5}deg)`;
+                }
+            });
+        });
+
+        // Auth View Management
+        const loginContainer = document.getElementById('login-container');
+        const forgotContainer = document.getElementById('forgot-container');
+        const registerContainer = document.getElementById('register-container');
+        
+        // Navigation between auth views
+        document.getElementById('forgot-password-link').addEventListener('click', () => {
+            loginContainer.classList.add('hidden');
+            forgotContainer.classList.remove('hidden');
+        });
+        
+        document.getElementById('create-account-link').addEventListener('click', () => {
+            loginContainer.classList.add('hidden');
+            registerContainer.classList.remove('hidden');
+        });
+        
+        document.getElementById('back-to-login-from-forgot').addEventListener('click', () => {
+            forgotContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+        });
+        
+        document.getElementById('login-from-forgot-link').addEventListener('click', () => {
+            forgotContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+        });
+        
+        document.getElementById('back-to-login-from-register').addEventListener('click', () => {
+            registerContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+        });
+        
+        document.getElementById('login-from-register-link').addEventListener('click', () => {
+            registerContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+        });
+        
+        // Password strength checker
+        document.getElementById('register-password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.getElementById('strength-bar');
+            const errorElement = document.getElementById('password-error');
+            
+            // Reset
+            strengthBar.style.width = '0%';
+            strengthBar.style.backgroundColor = '#f44336';
+            errorElement.style.display = 'none';
+            
+            if (password.length === 0) return;
+            
+            // Strength calculation
+            let strength = 0;
+            
+            // Length check
+            if (password.length > 7) strength += 25;
+            
+            // Contains numbers
+            if (/\d/.test(password)) strength += 25;
+            
+            // Contains special chars
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength += 25;
+            
+            // Contains both cases
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+            
+            // Update strength bar
+            strengthBar.style.width = strength + '%';
+            
+            // Color coding
+            if (strength > 75) {
+                strengthBar.style.backgroundColor = '#4caf50';
+            } else if (strength > 50) {
+                strengthBar.style.backgroundColor = '#ff9800';
+            }
+            
+            // Validation
+            if (password.length < 8) {
+                errorElement.textContent = 'Password must be at least 8 characters';
+                errorElement.style.display = 'block';
+            }
+        });
+        
+        // Confirm password checker
+        document.getElementById('register-confirm-password').addEventListener('input', function() {
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = this.value;
+            const errorElement = document.getElementById('confirm-error');
+            
+            if (confirmPassword.length === 0) {
+                errorElement.style.display = 'none';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                errorElement.textContent = 'Passwords do not match';
+                errorElement.style.display = 'block';
+            } else {
+                errorElement.style.display = 'none';
+            }
+        });
+        
+        // Form Submissions
+        document.getElementById('send-reset-btn').addEventListener('click', () => {
+            const email = document.getElementById('forgot-email').value;
+            if (email) {
+                // In a real app, you would send this to your backend
+                console.log('Password reset requested for:', email);
+                
+                // Show success message
+                document.getElementById('forgot-success').classList.add('visible');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    forgotContainer.classList.add('hidden');
+                    loginContainer.classList.remove('hidden');
+                    document.getElementById('forgot-success').classList.remove('visible');
+                    document.getElementById('forgot-email').value = '';
+                }, 3000);
+            } else {
+                alert('Please enter your email address');
+            }
+        });
+        
+        document.getElementById('register-btn').addEventListener('click', () => {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+            const terms = document.getElementById('terms').checked;
+            
+            // Validate form
+            if (!name || !email || !password || !confirmPassword) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            if (password.length < 8) {
+                document.getElementById('password-error').textContent = 'Password must be at least 8 characters';
+                document.getElementById('password-error').style.display = 'block';
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                document.getElementById('confirm-error').textContent = 'Passwords do not match';
+                document.getElementById('confirm-error').style.display = 'block';
+                return;
+            }
+            
+            if (!terms) {
+                alert('You must agree to the terms and conditions');
+                return;
+            }
+            
+            // In a real app, you would send this to your backend
+            console.log('Registration submitted:', { name, email, password });
+            
+            // Show success message
+            document.getElementById('register-success').classList.add('visible');
+            
+            // Hide after 3 seconds and reset form
+            setTimeout(() => {
+                registerContainer.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+                document.getElementById('register-success').classList.remove('visible');
+                
+                // Clear form
+                document.getElementById('register-name').value = '';
+                document.getElementById('register-email').value = '';
+                document.getElementById('register-password').value = '';
+                document.getElementById('register-confirm-password').value = '';
+                document.getElementById('terms').checked = false;
+                
+                // Reset strength bar
+                document.getElementById('strength-bar').style.width = '0%';
+                document.getElementById('strength-bar').style.backgroundColor = '#f44336';
+            }, 3000);
+        });
+        
+        // Demo login (no actual authentication)
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!email || !password) {
+                alert('Please enter both email and password');
+                return;
+            }
+            
+            // In a real app, you would authenticate with your backend here
+            console.log('Login attempted:', email);
+            alert('Login functionality would connect to your backend in a real application');
+        });
+
+        // Google Sign-In Implementation
+        function handleCredentialResponse(response) {
+            // This is where you would verify the credential with your backend
+            console.log("Google Sign-In response:", response);
+            
+            // Decode the JWT token to get user info
+            const responsePayload = parseJwt(response.credential);
+            
+            console.log('ID: ' + responsePayload.sub);
+            console.log('Full Name: ' + responsePayload.name);
+            console.log('Given Name: ' + responsePayload.given_name);
+            console.log('Family Name: ' + responsePayload.family_name);
+            console.log('Image URL: ' + responsePayload.picture);
+            console.log('Email: ' + responsePayload.email);
+            
+            // In a real app, you would send this to your backend for verification
+            // and then handle the login response
+            
+            alert(`Welcome ${responsePayload.name}! (Google Sign-In successful)`);
+        }
+
+        function parseJwt(token) {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
+        }
+
+        // Initialize Google Sign-In
+        window.onload = function() {
+            google.accounts.id.initialize({
+                client_id: "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com", // Replace with your actual client ID
+                callback: handleCredentialResponse,
+                context: 'signin'
+            });
+
+            // Attach click handler to our custom Google button
+            document.getElementById('google-signin-button').addEventListener('click', function() {
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkipped()) {
+                        // Try again if the prompt was skipped or not displayed
+                        google.accounts.id.renderButton(
+                            document.getElementById('google-signin-btn'),
+                            { 
+                                theme: 'filled_blue', 
+                                size: 'large',
+                                width: '300'
+                            }
+                        );
+                        document.getElementById('google-signin-btn').click();
+                    }
+                });
+            });
+        };
+    </script>
+</body>
+</html>
